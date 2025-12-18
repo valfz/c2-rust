@@ -1,0 +1,116 @@
+// Protocol Buffer Definition for C2 (Command & Control) System
+//
+// This file defines the data structures and RPC services for a simple
+// Command & Control system for educational purposes.
+//
+// ARCHITECTURE:
+// - Two services: Implant (for agents) and Admin (for operators)
+// - Two message types: Command (contains input/output) and Empty (null placeholder)
+//
+// SECURITY NOTE:
+// This is a simplified educational example. Production C2 systems should include:
+// - Authentication (verify implant/admin identity)
+// - Authorization (control who can execute what)
+// - Encryption (protect data in transit)
+// - Command validation (whitelist/sanitize commands)
+// - Audit logging (track all operations)
+
+syntax = "proto3";
+package implant;
+
+// Implant Service - API for implant agents to communicate with the server
+//
+// This service is exposed on port 4444 and allows implants to:
+// 1. Poll for new commands (FetchCommand)
+// 2. Send command results back (SendOutput)
+//
+// DESIGN PATTERN: Polling
+// - Implants regularly call FetchCommand to check for work
+// - Server returns empty Command when no work is available
+// - This allows implants behind NAT/firewalls to work
+service Implant {
+  // FetchCommand is called by implants to retrieve pending commands
+  //
+  // REQUEST: Empty (no parameters needed)
+  // RESPONSE: Command with inp field populated (or empty if no work)
+  //
+  // USAGE:
+  // - Implants poll this every few seconds
+  // - Non-blocking: returns immediately with or without work
+  // - If Command.inp is empty, no work is available
+  rpc FetchCommand (Empty) returns (Command);
+
+  // SendOutput is called by implants to return command execution results
+  //
+  // REQUEST: Command with both inp (original command) and out (result) populated
+  // RESPONSE: Empty (acknowledgment only)
+  //
+  // USAGE:
+  // - Called after implant executes a command
+  // - Server forwards the result to the waiting admin
+  // - Implant can then immediately poll for more work
+  rpc SendOutput (Command) returns (Empty);
+}
+
+// Admin Service - API for admin clients to send commands to implants
+//
+// This service is exposed on port 9090 and allows admins to:
+// 1. Send commands to implants and wait for results (RunCommand)
+//
+// DESIGN PATTERN: Request-Response
+// - Admin sends a command and blocks waiting for result
+// - Server queues the command for implants
+// - When an implant returns result, server returns it to admin
+service Admin {
+  // RunCommand is called by admin clients to execute a command on an implant
+  //
+  // REQUEST: Command with inp field populated (command to execute)
+  // RESPONSE: Command with both inp and out fields populated (result)
+  //
+  // USAGE:
+  // - Admin sends command (e.g., "ls -la")
+  // - This RPC BLOCKS until an implant executes it and returns result
+  // - Timeout behavior depends on gRPC client configuration
+  //
+  // FLOW:
+  // 1. Admin calls RunCommand with Command.inp = "whoami"
+  // 2. Server puts command in queue
+  // 3. Implant polls FetchCommand, gets the command
+  // 4. Implant executes "whoami" and gets output
+  // 5. Implant calls SendOutput with result
+  // 6. Server receives result and returns it to Admin
+  rpc RunCommand (Command) returns (Command);
+}
+
+// Command represents a shell command and its execution result
+//
+// FIELDS:
+// - inp: The command to execute (e.g., "ls -la" or "whoami")
+// - out: The command output (stdout + stderr + exit status)
+//
+// USAGE PATTERNS:
+// 1. Admin -> Server: Command{inp: "ls", out: ""}
+// 2. Server -> Implant: Command{inp: "ls", out: ""}
+// 3. Implant -> Server: Command{inp: "ls", out: "file1\nfile2\n"}
+// 4. Server -> Admin: Command{inp: "ls", out: "file1\nfile2\n"}
+message Command {
+  // inp is the input command to execute
+  // Examples: "whoami", "ls -la", "cat /etc/passwd"
+  // Note: In production, this should be validated/sanitized!
+  string inp = 1;
+
+  // out is the output from executing the command
+  // Contains: stdout + stderr + exit status (if non-zero)
+  // Empty string means command hasn't been executed yet
+  string out = 2;
+}
+
+// Empty represents a message with no fields
+//
+// Used in gRPC when you need to pass "nothing" but proto3 requires a type.
+// Equivalent to void in other languages, but gRPC requires actual messages.
+//
+// USAGE:
+// - FetchCommand request (no parameters needed)
+// - SendOutput response (just acknowledgment, no data)
+message Empty {}

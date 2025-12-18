@@ -1,0 +1,27 @@
+[package]
+name = "grpc-rs"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "implant"
+path = "src/bin/implant.rs"
+
+[[bin]]
+name = "admin"
+path = "src/bin/admin.rs"
+
+[dependencies]
+tonic = "0.14.2"
+tokio = { version = "1.48.0", features = ["full"] }
+prost = "0.14.1"
+tonic-prost = "0.14.2"
+tonic-reflection = "0.14.2"
+
+[build-dependencies]
+tonic-build = { version = "0.14.2", features = ["transport"] }
+tonic-prost-build = "0.14.2"
