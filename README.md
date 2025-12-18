@@ -60,15 +60,25 @@ This project showcases:
 ### Prerequisites
 
 - Rust 1.75+ (2024 edition)
-- `grpcurl` (optional, for testing with reflection)
+- `grpcurl` (optional, for CLI testing with reflection)
+- `grpcui` (optional, for web-based GUI testing)
 
 ```bash
-# Install grpcurl (optional)
+# Install grpcurl (optional, for CLI testing)
 # macOS
 brew install grpcurl
 
 # Linux
 # Download from: https://github.com/fullstorydev/grpcurl/releases
+
+# Install grpcui (optional, for web GUI testing)
+# macOS
+brew install grpcui
+
+# Linux / macOS (with Go installed)
+go install github.com/fullstorydev/grpcui/cmd/grpcui@latest
+
+# Or download from: https://github.com/fullstorydev/grpcui/releases
 ```
 
 ### Build
@@ -247,7 +257,7 @@ grpcurl -plaintext -d '{}' localhost:4444 implant.Implant/FetchCommand
 **Send a Command (as admin):**
 ```bash
 # Send a command and wait for result
-grpcurl -plaintext -d '{"inp": "whoami"}' localhost:9090 implant.Admin/RunCommand
+grpcurl -plaintext -d '{"Inp": "whoami"}' localhost:9090 implant.Admin/RunCommand
 ```
 
 This will block until an implant polls, executes the command, and returns the result.
@@ -255,8 +265,136 @@ This will block until an implant polls, executes the command, and returns the re
 **Send Output (as implant):**
 ```bash
 # Send command result back
-grpcurl -plaintext -d '{"inp": "whoami", "out": "root"}' localhost:4444 implant.Implant/SendOutput
+grpcurl -plaintext -d '{"Inp": "whoami", "Out": "root"}' localhost:4444 implant.Implant/SendOutput
 ```
+
+## 🖥️ Testing with grpcui (Web GUI)
+
+`grpcui` provides a web-based graphical interface for testing gRPC services. It's perfect for visual exploration and interactive testing.
+
+### Launch grpcui
+
+**For Implant Server (port 4444):**
+```bash
+grpcui -plaintext localhost:4444
+```
+
+Output:
+```
+gRPC Web UI available at http://127.0.0.1:60551/
+```
+
+**For Admin Server (port 9090):**
+```bash
+grpcui -plaintext localhost:9090
+```
+
+Your browser will automatically open to the grpcui interface.
+
+### Using the Web Interface
+
+1. **Select a Service**
+   - In the dropdown, you'll see `implant.Implant` or `implant.Admin`
+   - Select the service you want to test
+
+2. **Select a Method**
+   - Choose from available RPC methods:
+     - `FetchCommand` (for implant server)
+     - `SendOutput` (for implant server)
+     - `RunCommand` (for admin server)
+
+3. **Fill in Request Data**
+   - The interface shows a JSON editor for the request
+   - For example, to test `RunCommand`:
+     ```json
+     {
+       "Inp": "ls -la",
+       "Out": ""
+     }
+     ```
+
+4. **Click "Invoke"**
+   - The request is sent to the server
+   - Response appears in the "Response Data" section
+
+### Example Workflows in grpcui
+
+**Test as Admin (port 9090):**
+
+1. Open grpcui: `grpcui -plaintext localhost:9090`
+2. Select service: `implant.Admin`
+3. Select method: `RunCommand`
+4. Enter request:
+   ```json
+   {
+     "Inp": "whoami",
+     "Out": ""
+   }
+   ```
+5. Click "Invoke"
+6. Wait for implant to execute (this will block until an implant responds)
+7. See the response:
+   ```json
+   {
+     "Inp": "whoami",
+     "Out": "username\n"
+   }
+   ```
+
+**Test as Implant (port 4444):**
+
+1. Open grpcui: `grpcui -plaintext localhost:4444`
+2. Select service: `implant.Implant`
+3. Select method: `FetchCommand`
+4. Enter empty request: `{}`
+5. Click "Invoke"
+6. If no commands queued:
+   ```json
+   {
+     "Inp": "",
+     "Out": ""
+   }
+   ```
+7. If command available:
+   ```json
+   {
+     "Inp": "ls -la",
+     "Out": ""
+   }
+   ```
+
+### grpcui Features
+
+- **📋 Request History**: View all previous requests
+- **🔄 Auto-complete**: JSON fields auto-complete based on proto
+- **📝 Pretty Print**: Responses are formatted nicely
+- **🎨 Syntax Highlighting**: JSON syntax highlighting
+- **⏱️ Timing Info**: See request duration
+- **🔍 Service Discovery**: Automatic via gRPC reflection
+
+### grpcui vs grpcurl
+
+| Feature | grpcurl | grpcui |
+|---------|---------|--------|
+| Interface | Command-line | Web browser |
+| Speed | Very fast | Slightly slower (opens browser) |
+| Scripting | Easy to script | Not scriptable |
+| Learning | Steeper curve | Very intuitive |
+| CI/CD | Perfect for automation | Not suitable |
+| Exploration | Good | Excellent |
+
+**Use grpcurl when:**
+- Writing automated tests
+- Scripting in CI/CD pipelines
+- Quick one-off commands
+- Working in terminal-only environments
+
+**Use grpcui when:**
+- Learning the API
+- Manual testing with complex data
+- Demonstrating to others
+- Exploring service capabilities
+- You prefer visual interfaces
 
 ## 📖 Protocol Buffer Definition
 
