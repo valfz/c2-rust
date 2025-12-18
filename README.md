@@ -547,7 +547,26 @@ This is an educational project. If you find issues or want to improve the docume
 
 ## 📄 License
 
-MIT License - feel free to use this for learning purposes.
+This project is licensed under the **BSD 3-Clause License** - see the [LICENSE](LICENSE) file for details.
+
+### BSD 3-Clause License
+
+```
+BSD 3-Clause License
+
+Copyright (c) 2025, Valentin
+```
+
+**What this means:**
+- ✅ Free to use for any purpose (commercial or personal)
+- ✅ Free to modify and distribute
+- ✅ Free to use in proprietary software
+- ✅ Can be included in closed-source projects
+- ⚠️ Must include the copyright notice and license in redistributions
+- ⚠️ Cannot use the author's name to endorse derived products without permission
+- ⚠️ No warranty or liability from the author
+
+For the full license text, see the [LICENSE](LICENSE) file.
 
 ## 🙏 Acknowledgments
 
